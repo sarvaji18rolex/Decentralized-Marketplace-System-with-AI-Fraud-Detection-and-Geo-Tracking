@@ -1,4 +1,4 @@
-# 🛍️ Bazaar — Full-Stack OLX Clone
+# 🛍️ Bazaar — Decentralized Marketplace System with AI Fraud Detection and Geo-Tracking
 
 A feature-rich marketplace app built with Python Flask, SQLite, Leaflet maps, and real-time chat.
 
