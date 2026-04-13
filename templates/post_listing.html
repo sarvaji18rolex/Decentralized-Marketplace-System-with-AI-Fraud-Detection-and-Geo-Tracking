@@ -1,0 +1,233 @@
+{% extends 'base.html' %}
+{% block title %}Post a Listing — Bazaar{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+.post-wrap { max-width: 820px; margin: 0 auto; padding: 40px 0; }
+.post-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 40px; }
+.post-title { font-family: 'Syne', sans-serif; font-size: 1.6rem; font-weight: 800; margin-bottom: 6px; }
+.post-sub { color: var(--text2); margin-bottom: 36px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+#map { height: 280px; border-radius: 12px; border: 1px solid var(--border); }
+.img-preview-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 12px; }
+.img-preview { aspect-ratio:1; border-radius:8px; object-fit:cover; border:1px solid var(--border); }
+.ai-result {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 12px; padding: 16px; margin-top: 16px; display: none;
+}
+.ai-score-bar { height: 8px; border-radius: 4px; background: var(--bg); margin: 8px 0; overflow: hidden; }
+.ai-score-fill { height: 100%; border-radius: 4px; transition: width 0.8s ease; }
+.payment-opts { display: flex; gap: 12px; flex-wrap: wrap; }
+.payment-opt input { display: none; }
+.payment-opt label {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--bg3); border: 2px solid var(--border);
+  border-radius: 10px; padding: 12px 18px; cursor: pointer;
+  transition: all 0.2s; font-size: 0.9rem;
+}
+.payment-opt input:checked + label { border-color: var(--accent); color: var(--accent); background: rgba(233,69,96,0.08); }
+@media(max-width:600px){ .form-row{grid-template-columns:1fr;} }
+</style>
+{% endblock %}
+{% block content %}
+<div class="container">
+<div class="post-wrap">
+  <div class="post-card">
+    <div class="post-title">📦 Post a Listing</div>
+    <div class="post-sub">Reach thousands of buyers near you — completely free</div>
+
+    <form method="post" enctype="multipart/form-data" id="post-form">
+      <div class="form-group">
+        <label class="form-label">Title *</label>
+        <input type="text" name="title" class="form-control" required
+               placeholder="e.g. iPhone 13 Pro Max 256GB Like New" id="title-input" maxlength="200">
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Category *</label>
+          <select name="category_id" class="form-control" required>
+            <option value="">Select category</option>
+            {% for cat in categories %}
+            <option value="{{ cat.id }}">{{ cat.icon }} {{ cat.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Condition *</label>
+          <select name="condition" class="form-control">
+            <option value="new">🆕 Brand New</option>
+            <option value="like_new" selected>✨ Like New</option>
+            <option value="good">👍 Good</option>
+            <option value="fair">👌 Fair</option>
+            <option value="for_parts">🔧 For Parts</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Description *</label>
+        <textarea name="description" class="form-control" rows="5" required
+                  placeholder="Describe your item — include key features, reason for selling, any defects..." id="desc-input"></textarea>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Price (₹) *</label>
+          <input type="number" name="price" class="form-control" required min="1" step="1"
+                 placeholder="0" id="price-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">City</label>
+          <input type="text" name="city" class="form-control" placeholder="e.g. Mumbai" id="city-input">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">📍 Location (drag pin to set exact location)</label>
+        <div id="map"></div>
+        <input type="hidden" name="lat" id="lat">
+        <input type="hidden" name="lng" id="lng">
+        <input type="text" name="address" class="form-control" id="address-input"
+               placeholder="Address will auto-fill from map..." style="margin-top:10px">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="getMyLocation()" style="margin-top:8px">
+          <i class="fas fa-crosshairs"></i> Use My Location
+        </button>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Payment Methods</label>
+        <div class="payment-opts">
+          <div class="payment-opt">
+            <input type="radio" name="payment_method" id="pay-cash" value="cash" checked>
+            <label for="pay-cash">💵 Cash on Delivery</label>
+          </div>
+          <div class="payment-opt">
+            <input type="radio" name="payment_method" id="pay-upi" value="upi">
+            <label for="pay-upi">📱 UPI</label>
+          </div>
+          <div class="payment-opt">
+            <input type="radio" name="payment_method" id="pay-bank" value="bank">
+            <label for="pay-bank">🏦 Bank Transfer</label>
+          </div>
+          <div class="payment-opt">
+            <input type="radio" name="payment_method" id="pay-any" value="any">
+            <label for="pay-any">✅ Any Method</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Photos (up to 8)</label>
+        <input type="file" name="images" class="form-control" multiple accept="image/*"
+               id="img-upload" onchange="previewImages(event)">
+        <div class="img-preview-grid" id="preview-grid"></div>
+      </div>
+
+      <!-- AI Analysis -->
+      <div class="ai-result" id="ai-result">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <span style="font-size:1.4rem">🤖</span>
+          <strong>AI Pre-Analysis</strong>
+          <span id="ai-status" class="badge badge-green" style="margin-left:auto"></span>
+        </div>
+        <div style="font-size:0.85rem;color:var(--text2)">Authenticity Score</div>
+        <div class="ai-score-bar"><div class="ai-score-fill" id="ai-fill"></div></div>
+        <div id="ai-flags" style="font-size:0.82rem;color:var(--text2);margin-top:8px"></div>
+      </div>
+
+      <button type="button" class="btn btn-secondary btn-full" style="margin-bottom:12px" onclick="preAnalyze()">
+        🤖 Pre-analyze with AI
+      </button>
+      <button type="submit" class="btn btn-primary btn-full">
+        <i class="fas fa-plus"></i> Post Listing
+      </button>
+    </form>
+  </div>
+</div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+let map, marker;
+
+function initMap(lat=20.5937, lng=78.9629) {
+  map = L.map('map').setView([lat, lng], 5);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap'
+  }).addTo(map);
+  marker = L.marker([lat, lng], {draggable: true}).addTo(map);
+  marker.on('dragend', updateLocation);
+  map.on('click', function(e){ marker.setLatLng(e.latlng); updateLocation(); });
+}
+
+function updateLocation() {
+  const ll = marker.getLatLng();
+  document.getElementById('lat').value = ll.lat.toFixed(6);
+  document.getElementById('lng').value = ll.lng.toFixed(6);
+  fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${ll.lat}&lon=${ll.lng}`)
+    .then(r=>r.json()).then(d=>{
+      const a = d.display_name || '';
+      document.getElementById('address-input').value = a.substring(0,200);
+      const city = d.address?.city || d.address?.town || d.address?.village || '';
+      if(city) document.getElementById('city-input').value = city;
+    }).catch(()=>{});
+}
+
+function getMyLocation() {
+  if(!navigator.geolocation) return alert('Geolocation not supported');
+  navigator.geolocation.getCurrentPosition(pos=>{
+    const {latitude:lat, longitude:lng} = pos.coords;
+    map.setView([lat,lng], 15);
+    marker.setLatLng([lat,lng]);
+    document.getElementById('lat').value = lat.toFixed(6);
+    document.getElementById('lng').value = lng.toFixed(6);
+    updateLocation();
+  });
+}
+
+function previewImages(event) {
+  const grid = document.getElementById('preview-grid');
+  grid.innerHTML = '';
+  const files = Array.from(event.target.files).slice(0,8);
+  files.forEach(file=>{
+    const reader = new FileReader();
+    reader.onload = e=>{
+      const img = document.createElement('img');
+      img.src = e.target.result; img.className = 'img-preview';
+      grid.appendChild(img);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function preAnalyze() {
+  const title = document.getElementById('title-input').value;
+  const desc = document.getElementById('desc-input').value;
+  const price = parseFloat(document.getElementById('price-input').value) || 0;
+  if(!title) { alert('Please fill in the title first.'); return; }
+
+  let score = 100, flags = [];
+  const suspicious = ['free money','guaranteed','lottery','winner','wire transfer','advance fee'];
+  suspicious.forEach(w=>{ if(title.toLowerCase().includes(w)||desc.toLowerCase().includes(w)){ flags.push('Suspicious phrase: '+w); score-=25; } });
+  if(price < 1){ flags.push('Price is unrealistically low'); score-=20; }
+  if(desc.length < 30){ flags.push('Description is too short — add more details'); score-=10; }
+  if(['whatsapp','telegram','call me'].some(p=>desc.toLowerCase().includes(p))){ flags.push('External contact request detected — use in-app chat'); score-=15; }
+  score = Math.max(0, Math.min(100, score));
+
+  const res = document.getElementById('ai-result');
+  const fill = document.getElementById('ai-fill');
+  const status = document.getElementById('ai-status');
+  const flagsDiv = document.getElementById('ai-flags');
+  res.style.display = 'block';
+  fill.style.width = score+'%';
+  fill.style.background = score>=70?'var(--green)':score>=40?'var(--accent2)':'var(--accent)';
+  status.textContent = score>=70?'✅ Looks Good':score>=40?'⚠️ Review Needed':'❌ High Risk';
+  status.className = 'badge '+(score>=70?'badge-green':score>=40?'badge-orange':'badge-red');
+  flagsDiv.innerHTML = flags.length ? '⚠️ '+flags.join(' · ') : '✅ No issues detected. Your listing looks authentic!';
+}
+
+initMap();
+</script>
+{% endblock %}

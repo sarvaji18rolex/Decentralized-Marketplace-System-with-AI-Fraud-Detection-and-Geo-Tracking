@@ -1,0 +1,191 @@
+{% extends 'base.html' %}
+{% block extra_css %}
+<style>
+.hero {
+  background: linear-gradient(135deg, var(--bg) 0%, var(--blue) 100%);
+  padding: 80px 24px 60px;
+  text-align: center;
+  position: relative; overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(circle at 30% 50%, rgba(233,69,96,0.15) 0%, transparent 60%),
+              radial-gradient(circle at 70% 50%, rgba(15,52,96,0.4) 0%, transparent 60%);
+}
+.hero-inner { position: relative; z-index: 1; max-width: 800px; margin: 0 auto; }
+.hero h1 {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(2.2rem, 6vw, 4rem);
+  font-weight: 800; line-height: 1.15;
+  margin-bottom: 16px;
+}
+.hero h1 span { color: var(--accent); }
+.hero p { font-size: 1.15rem; color: var(--text2); margin-bottom: 36px; }
+.hero-search {
+  display: flex; max-width: 580px; margin: 0 auto 24px;
+  background: var(--bg2); border: 2px solid var(--border);
+  border-radius: 60px; overflow: hidden;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+}
+.hero-search input {
+  flex: 1; background: none; border: none; outline: none;
+  color: var(--text); padding: 16px 24px; font-size: 1rem;
+  font-family: inherit;
+}
+.hero-search button {
+  background: var(--accent); border: none; cursor: pointer;
+  padding: 0 28px; color: white; font-weight: 600;
+  font-size: 0.95rem; font-family: inherit;
+  transition: background 0.2s;
+}
+.hero-stats {
+  display: flex; gap: 32px; justify-content: center; flex-wrap: wrap;
+  margin-top: 32px;
+}
+.stat-item { text-align: center; }
+.stat-num { font-family: 'Syne', sans-serif; font-size: 1.8rem; font-weight: 800; color: var(--accent); }
+.stat-label { font-size: 0.8rem; color: var(--text2); }
+
+.categories-section { padding: 48px 0 32px; }
+.cats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 14px;
+}
+.cat-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px 12px;
+  text-align: center; cursor: pointer;
+  transition: all 0.25s;
+}
+.cat-card:hover {
+  border-color: var(--accent); transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(233,69,96,0.2);
+}
+.cat-icon { font-size: 2rem; margin-bottom: 8px; }
+.cat-name { font-size: 0.8rem; font-weight: 600; color: var(--text2); }
+
+.featured-section { padding: 32px 0; }
+.section-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 24px; }
+
+.trust-section {
+  background: var(--bg2); border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border); padding: 40px 0; margin: 40px 0;
+}
+.trust-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 32px; }
+.trust-item { text-align: center; padding: 0 16px; }
+.trust-icon { font-size: 2.5rem; margin-bottom: 12px; }
+.trust-title { font-family: 'Syne', sans-serif; font-weight: 700; margin-bottom: 6px; }
+.trust-desc { font-size: 0.85rem; color: var(--text2); line-height: 1.5; }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <div class="hero-inner">
+    <h1>Buy & Sell <span>Anything</span><br>Near You</h1>
+    <p>India's smartest marketplace with AI product verification, live maps & safe payments</p>
+    <form class="hero-search" action="{{ url_for('listings') }}" method="get">
+      <input type="text" name="q" placeholder="What are you looking for?">
+      <button type="submit">Search</button>
+    </form>
+    <div class="hero-stats">
+      <div class="stat-item"><div class="stat-num">10K+</div><div class="stat-label">Active Listings</div></div>
+      <div class="stat-item"><div class="stat-num">5K+</div><div class="stat-label">Verified Sellers</div></div>
+      <div class="stat-item"><div class="stat-num">50+</div><div class="stat-label">Cities</div></div>
+      <div class="stat-item"><div class="stat-num">100%</div><div class="stat-label">Free to Use</div></div>
+    </div>
+  </div>
+</section>
+
+<div class="container page-content">
+  <section class="categories-section">
+    <div class="section-header">
+      <div>
+        <div class="section-title">Browse Categories</div>
+        <div class="section-sub">Find exactly what you need</div>
+      </div>
+    </div>
+    <div class="cats-grid">
+      {% for cat in categories %}
+      <a href="{{ url_for('listings', category=cat.id) }}">
+        <div class="cat-card">
+          <div class="cat-icon">{{ cat.icon }}</div>
+          <div class="cat-name">{{ cat.name }}</div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+
+<div class="trust-section">
+  <div class="container">
+    <div class="trust-grid">
+      <div class="trust-item">
+        <div class="trust-icon">🤖</div>
+        <div class="trust-title">AI Verification</div>
+        <div class="trust-desc">Every listing is analyzed by AI to detect fake or suspicious products</div>
+      </div>
+      <div class="trust-item">
+        <div class="trust-icon">🗺️</div>
+        <div class="trust-title">Live Map</div>
+        <div class="trust-desc">See listings near you with real-time distance and delivery estimates</div>
+      </div>
+      <div class="trust-item">
+        <div class="trust-icon">💬</div>
+        <div class="trust-title">Secure Chat</div>
+        <div class="trust-desc">Real-time messaging with AI assistant to help you negotiate safely</div>
+      </div>
+      <div class="trust-item">
+        <div class="trust-icon">🛡️</div>
+        <div class="trust-title">Safe Payments</div>
+        <div class="trust-desc">Cash on delivery, UPI & bank transfer options with buyer protection</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  {% if featured %}
+  <section class="featured-section">
+    <div class="section-header">
+      <div>
+        <div class="section-title">⭐ Featured Listings</div>
+        <div class="section-sub">Hand-picked quality items</div>
+      </div>
+      <a href="{{ url_for('listings') }}" style="color:var(--accent);font-size:0.9rem">View all →</a>
+    </div>
+    <div class="listings-grid">
+      {% for l in featured %}
+        {% include 'partials/listing_card.html' %}
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <section style="padding: 32px 0 48px;">
+    <div class="section-header">
+      <div>
+        <div class="section-title">🆕 Latest Listings</div>
+        <div class="section-sub">Fresh arrivals today</div>
+      </div>
+      <a href="{{ url_for('listings') }}" style="color:var(--accent);font-size:0.9rem">See all →</a>
+    </div>
+    {% if recent %}
+    <div class="listings-grid">
+      {% for l in recent %}
+        {% include 'partials/listing_card.html' %}
+      {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align:center;padding:60px;color:var(--text2)">
+      <div style="font-size:3rem;margin-bottom:16px">🛍️</div>
+      <div style="font-size:1.1rem;margin-bottom:20px">No listings yet. Be the first to sell!</div>
+      <a href="{{ url_for('post_listing') }}" class="btn btn-primary">Post a Listing</a>
+    </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

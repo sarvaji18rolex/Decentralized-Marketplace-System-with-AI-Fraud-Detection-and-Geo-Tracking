@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}Favorites — Bazaar{% endblock %}
+{% block content %}
+<div class="container page-content">
+  <div class="section-title" style="margin-bottom:8px">❤️ Saved Listings</div>
+  <div class="section-sub">Items you've saved for later</div>
+  {% if favorites %}
+  <div class="listings-grid">
+    {% for fav in favorites %}
+      {% set l = fav.listing %}
+      {% if l and l.is_active %}
+        {% include 'partials/listing_card.html' %}
+      {% endif %}
+    {% endfor %}
+  </div>
+  {% else %}
+  <div style="text-align:center;padding:80px 0;color:var(--text2)">
+    <div style="font-size:3rem;margin-bottom:16px">❤️</div>
+    <div style="margin-bottom:20px">No saved listings yet</div>
+    <a href="{{ url_for('listings') }}" class="btn btn-primary">Browse Listings</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

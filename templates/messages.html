@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}Messages — Bazaar{% endblock %}
+{% block content %}
+<div class="container page-content" style="max-width:700px">
+  <div class="section-title" style="margin-bottom:24px">💬 Messages</div>
+  {% if conversations %}
+    {% for convo in conversations %}
+    <a href="{{ url_for('chat', user_id=convo.other_id, listing_id=convo.msg.listing_id) }}"
+       style="display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px 20px;margin-bottom:12px;transition:border-color 0.2s"
+       onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+      <div style="width:48px;height:48px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-family:'Syne',sans-serif;flex-shrink:0">
+        {{ convo.other.username[0].upper() if convo.other else '?' }}
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <strong>{{ convo.other.username if convo.other else 'Unknown' }}</strong>
+          <span style="font-size:0.75rem;color:var(--text2)">{{ convo.msg.created_at.strftime('%d %b, %H:%M') }}</span>
+        </div>
+        <div style="font-size:0.82rem;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+          re: {{ convo.listing.title if convo.listing else 'Listing' }}
+        </div>
+        <div style="font-size:0.875rem;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px">
+          {{ convo.msg.content[:60] }}{% if convo.msg.content|length > 60 %}…{% endif %}
+        </div>
+      </div>
+      {% if convo.unread > 0 %}
+      <span class="notif-badge">{{ convo.unread }}</span>
+      {% endif %}
+    </a>
+    {% endfor %}
+  {% else %}
+    <div style="text-align:center;padding:80px 0;color:var(--text2)">
+      <div style="font-size:3rem;margin-bottom:16px">💬</div>
+      <div>No messages yet. Browse listings and start chatting!</div>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

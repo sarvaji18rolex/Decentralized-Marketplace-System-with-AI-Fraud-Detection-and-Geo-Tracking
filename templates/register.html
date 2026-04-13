@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% block title %}Register — Bazaar{% endblock %}
+{% block extra_css %}
+<style>
+.auth-wrap {
+  min-height: calc(100vh - 64px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 40px 24px;
+}
+.auth-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 20px; padding: 48px 40px;
+  width: 100%; max-width: 460px;
+  box-shadow: var(--shadow);
+}
+.auth-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.8rem; font-weight: 800; margin-bottom: 4px;
+}
+.auth-sub { color: var(--text2); margin-bottom: 32px; }
+.captcha-wrap {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 20px;
+}
+.captcha-img {
+  border-radius: 8px; border: 1px solid var(--border);
+  flex-shrink: 0; cursor: pointer;
+}
+.captcha-img:hover { opacity: 0.8; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-title">Create Account</div>
+    <div class="auth-sub">Join Bazaar — it's free forever</div>
+    <form method="post">
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <input type="text" name="username" class="form-control" required placeholder="e.g. rajesh_kumar">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input type="email" name="email" class="form-control" required placeholder="you@example.com">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone (optional)</label>
+        <input type="tel" name="phone" class="form-control" placeholder="+91 98765 43210">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" name="password" class="form-control" required minlength="6" placeholder="Min 6 characters">
+      </div>
+      <div class="form-group">
+        <label class="form-label">🔐 CAPTCHA Verification</label>
+        <div class="captcha-wrap">
+          <img class="captcha-img" src="{{ url_for('captcha_image') }}" width="150" height="50"
+               id="captcha-img" alt="CAPTCHA" onclick="refreshCaptcha()" title="Click to refresh">
+          <div style="font-size:0.78rem;color:var(--text2)">Click image<br>to refresh</div>
+        </div>
+        <input type="text" name="captcha" class="form-control" required placeholder="Enter the code shown above" autocomplete="off">
+      </div>
+      <button type="submit" class="btn btn-primary btn-full" style="margin-top:8px">
+        Create Account <i class="fas fa-arrow-right"></i>
+      </button>
+    </form>
+    <div style="text-align:center;margin-top:24px;color:var(--text2);font-size:0.9rem">
+      Already have an account? <a href="{{ url_for('login') }}" style="color:var(--accent)">Sign in</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function refreshCaptcha() {
+  document.getElementById('captcha-img').src = '{{ url_for("captcha_image") }}?t=' + Date.now();
+}
+</script>
+{% endblock %}

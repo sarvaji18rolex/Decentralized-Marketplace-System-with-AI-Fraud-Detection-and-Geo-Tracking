@@ -1,0 +1,342 @@
+{% extends 'base.html' %}
+{% block title %}{{ listing.title }} — Bazaar{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+.detail-wrap { display: grid; grid-template-columns: 1fr 380px; gap: 32px; padding: 32px 0; }
+.detail-images { position: relative; }
+.main-img { width:100%; aspect-ratio:4/3; object-fit:cover; border-radius:16px; background:var(--bg3); }
+.thumb-row { display:flex; gap:10px; margin-top:12px; flex-wrap:wrap; }
+.thumb { width:72px; height:72px; object-fit:cover; border-radius:8px; cursor:pointer; border:2px solid transparent; transition:border-color 0.2s; }
+.thumb.active { border-color:var(--accent); }
+.thumb-placeholder { width:72px; height:72px; background:var(--bg3); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1.4rem; }
+
+.detail-sidebar > * { margin-bottom:20px; }
+.price-box { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px; }
+.price-val { font-family:'Syne',sans-serif; font-size:2rem; font-weight:800; color:var(--accent); }
+.ai-box { background:var(--bg3); border:1px solid var(--border); border-radius:12px; padding:16px; }
+.ai-score-row { display:flex; align-items:center; gap:12px; }
+.score-circle {
+  width:56px; height:56px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Syne',sans-serif; font-weight:800; font-size:1rem;
+}
+.seller-box { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; }
+.seller-row { display:flex; align-items:center; gap:14px; margin-bottom:16px; }
+.seller-avatar { width:52px; height:52px; background:var(--accent); border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'Syne',sans-serif; font-size:1.3rem; font-weight:800; }
+.stars { color:var(--accent2); }
+.map-box { background:var(--card); border:1px solid var(--border); border-radius:16px; overflow:hidden; }
+#detail-map { height:220px; width:100%; display:block; }
+.distance-info { padding:12px 16px; font-size:0.85rem; display:flex; gap:16px; }
+
+/* AI CHAT */
+.ai-chat-btn {
+  position:fixed; bottom:24px; right:24px; z-index:1000;
+  width:56px; height:56px; border-radius:50%;
+  background:linear-gradient(135deg,var(--accent),var(--blue));
+  border:none; cursor:pointer; font-size:1.4rem;
+  box-shadow:0 4px 20px rgba(233,69,96,0.4);
+  transition:transform 0.2s;
+}
+.ai-chat-btn:hover { transform:scale(1.1); }
+.ai-chat-panel {
+  position:fixed; bottom:90px; right:24px; z-index:1000;
+  width:340px; background:var(--card); border:1px solid var(--border);
+  border-radius:16px; box-shadow:var(--shadow); display:none;
+  flex-direction:column; overflow:hidden; max-height:440px;
+}
+.ai-chat-header {
+  background:linear-gradient(135deg,var(--accent),#c73050);
+  padding:14px 16px; display:flex; align-items:center; gap:10px;
+}
+.ai-chat-messages { flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:10px; min-height:200px; max-height:280px; }
+.ai-msg { padding:10px 14px; border-radius:10px; font-size:0.85rem; line-height:1.5; max-width:90%; }
+.ai-msg.bot { background:var(--bg3); color:var(--text); align-self:flex-start; }
+.ai-msg.user { background:var(--accent); color:white; align-self:flex-end; }
+.ai-chat-input { display:flex; border-top:1px solid var(--border); }
+.ai-chat-input input { flex:1; background:none; border:none; outline:none; color:var(--text); padding:12px 16px; font-size:0.85rem; font-family:inherit; }
+.ai-chat-input button { background:var(--accent); border:none; padding:0 16px; color:white; cursor:pointer; }
+
+.report-btn { color:var(--text2); font-size:0.8rem; cursor:pointer; background:none; border:none; font-family:inherit; }
+.report-btn:hover { color:var(--accent); }
+
+@media(max-width:900px){ .detail-wrap{grid-template-columns:1fr;} }
+</style>
+{% endblock %}
+{% block content %}
+<div class="container">
+<div class="detail-wrap">
+
+  <!-- LEFT -->
+  <div>
+    {% set imgs = listing.get_images() %}
+    {% if imgs %}
+      <img class="main-img" src="{{ url_for('static', filename='uploads/' + imgs[0]) }}" id="main-img" alt="{{ listing.title }}">
+      <div class="thumb-row">
+        {% for img in imgs %}
+        <img class="thumb {% if loop.first %}active{% endif %}"
+             src="{{ url_for('static', filename='uploads/' + img) }}"
+             onclick="switchImage(this, '{{ url_for('static', filename='uploads/' + img) }}')">
+        {% endfor %}
+      </div>
+    {% else %}
+      <div style="width:100%;aspect-ratio:4/3;background:var(--bg3);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:5rem">
+        {{ listing.category.icon if listing.category else '📦' }}
+      </div>
+    {% endif %}
+
+    <!-- Details -->
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;margin-top:24px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px">
+        <div>
+          <h1 style="font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;margin-bottom:8px">{{ listing.title }}</h1>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <span class="badge badge-blue">{{ listing.category.name if listing.category }}</span>
+            <span class="badge badge-green">{{ listing.condition|replace('_',' ')|title }}</span>
+            {% if listing.ai_verified %}<span class="badge badge-green">🤖 AI Verified</span>{% endif %}
+            {% if listing.payment_method == 'cash' %}<span class="badge badge-orange">💵 Cash on Delivery</span>{% endif %}
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:0.8rem;color:var(--text2)">{{ listing.views }} views</div>
+          <div style="font-size:0.8rem;color:var(--text2)">Posted {{ listing.created_at.strftime('%d %b %Y') }}</div>
+        </div>
+      </div>
+      <p style="color:var(--text2);line-height:1.7;white-space:pre-line">{{ listing.description }}</p>
+    </div>
+
+    <!-- Reviews -->
+    {% if reviews %}
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;margin-top:20px">
+      <div class="section-title" style="font-size:1.1rem;margin-bottom:16px">⭐ Seller Reviews</div>
+      {% for r in reviews %}
+      <div style="padding:14px 0;border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+          <div style="width:32px;height:32px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.8rem">
+            {{ r.reviewer.username[0].upper() if r.reviewer }}</div>
+          <strong style="font-size:0.9rem">{{ r.reviewer.username if r.reviewer }}</strong>
+          <span class="stars">{{'★'*r.rating}}{{'☆'*(5-r.rating)}}</span>
+          <span style="font-size:0.75rem;color:var(--text2);margin-left:auto">{{ r.created_at.strftime('%d %b') }}</span>
+        </div>
+        {% if r.comment %}<p style="font-size:0.875rem;color:var(--text2)">{{ r.comment }}</p>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- SIDEBAR -->
+  <div class="detail-sidebar">
+
+    <div class="price-box">
+      <div style="font-size:0.85rem;color:var(--text2);margin-bottom:4px">Price</div>
+      <div class="price-val">₹{{ '{:,.0f}'.format(listing.price) }}</div>
+      {% if listing.address %}
+      <div style="font-size:0.82rem;color:var(--text2);margin-top:8px">📍 {{ listing.address[:80] }}</div>
+      {% endif %}
+
+      <div style="display:flex;gap:10px;margin-top:20px">
+        {% if current_user.is_authenticated and current_user.id != listing.seller_id %}
+        <a href="{{ url_for('chat', user_id=listing.seller_id, listing_id=listing.id) }}" class="btn btn-primary" style="flex:1;justify-content:center">
+          <i class="fas fa-comment"></i> Chat
+        </a>
+        {% endif %}
+        <button class="btn btn-secondary" onclick="toggleFav({{ listing.id }}, this)" id="fav-btn" style="{% if not current_user.is_authenticated %}display:none{% endif %}">
+          <i class="fa{% if is_favorited %}s{% else %}r{% endif %} fa-heart"></i>
+        </button>
+      </div>
+
+      {% if not current_user.is_authenticated %}
+      <a href="{{ url_for('login') }}" class="btn btn-primary btn-full" style="margin-top:12px">Login to Contact</a>
+      {% endif %}
+    </div>
+
+    <!-- AI Score -->
+    <div class="ai-box">
+      <div style="font-size:0.8rem;color:var(--text2);margin-bottom:10px;font-weight:600">🤖 AI VERIFICATION REPORT</div>
+      <div class="ai-score-row">
+        <div class="score-circle" style="background:{% if listing.ai_score>=70 %}rgba(15,207,111,0.2);color:var(--green){% elif listing.ai_score>=40 %}rgba(245,166,35,0.2);color:var(--accent2){% else %}rgba(233,69,96,0.2);color:var(--accent){% endif %}">
+          {{ listing.ai_score|int }}%
+        </div>
+        <div>
+          <div style="font-weight:600;font-size:0.9rem">
+            {% if listing.ai_score >= 70 %}✅ Authentic Listing
+            {% elif listing.ai_score >= 40 %}⚠️ Needs Review
+            {% else %}❌ High Risk{% endif %}
+          </div>
+          <div style="font-size:0.78rem;color:var(--text2)">Based on AI analysis</div>
+        </div>
+      </div>
+      {% set flags = listing.get_ai_flags() %}
+      {% if flags %}
+      <div style="margin-top:10px;font-size:0.78rem;color:var(--accent2)">
+        {% for f in flags %}<div>⚠️ {{ f }}</div>{% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Seller -->
+    <div class="seller-box">
+      <div class="seller-row">
+        <div class="seller-avatar">{{ listing.seller.username[0].upper() }}</div>
+        <div>
+          <a href="{{ url_for('profile', user_id=listing.seller.id) }}" style="font-weight:700">{{ listing.seller.username }}</a>
+          <div class="stars" style="font-size:0.85rem">
+            {% set r = listing.seller.rating|int %}
+            {{'★'*r}}{{'☆'*(5-r)}}
+            <span style="color:var(--text2)">({{ listing.seller.total_ratings }})</span>
+          </div>
+          <div style="font-size:0.78rem;color:var(--text2)">Member since {{ listing.seller.created_at.strftime('%b %Y') }}</div>
+        </div>
+      </div>
+      <a href="{{ url_for('profile', user_id=listing.seller.id) }}" class="btn btn-secondary btn-full btn-sm">View Profile</a>
+    </div>
+
+    <!-- Map -->
+    {% if listing.lat and listing.lng %}
+    <div class="map-box">
+      <div id="detail-map"></div>
+      <div class="distance-info" id="dist-info">
+        <span>📍 {{ listing.city or 'Location set' }}</span>
+        <span id="dist-text" style="color:var(--accent2)"></span>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Leave Review -->
+    {% if current_user.is_authenticated and current_user.id != listing.seller_id %}
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px">
+      <div style="font-weight:700;margin-bottom:14px">Leave a Review</div>
+      <form action="{{ url_for('add_review', seller_id=listing.seller_id, listing_id=listing.id) }}" method="post">
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          {% for i in range(1,6) %}
+          <label style="cursor:pointer;font-size:1.5rem;color:var(--text2)" title="{{ i }} star">
+            <input type="radio" name="rating" value="{{ i }}" style="display:none" required>⭐
+          </label>
+          {% endfor %}
+        </div>
+        <textarea name="comment" class="form-control" rows="2" placeholder="Share your experience..."></textarea>
+        <button type="submit" class="btn btn-secondary btn-full btn-sm" style="margin-top:10px">Submit Review</button>
+      </form>
+    </div>
+    {% endif %}
+
+    <!-- Report -->
+    {% if current_user.is_authenticated and current_user.id != listing.seller_id %}
+    <details>
+      <summary class="report-btn">🚩 Report this listing</summary>
+      <form action="{{ url_for('report_listing', listing_id=listing.id) }}" method="post" style="margin-top:12px">
+        <select name="reason" class="form-control" style="margin-bottom:10px">
+          <option>Fake or counterfeit product</option>
+          <option>Spam or misleading</option>
+          <option>Inappropriate content</option>
+          <option>Scam or fraud</option>
+          <option>Wrong category</option>
+        </select>
+        <textarea name="details" class="form-control" rows="2" placeholder="Additional details..."></textarea>
+        <button type="submit" class="btn btn-outline btn-full btn-sm" style="margin-top:10px">Submit Report</button>
+      </form>
+    </details>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Similar Listings -->
+{% if similar %}
+<div style="padding-bottom:48px">
+  <div class="section-title" style="margin-bottom:20px">Similar Listings</div>
+  <div class="listings-grid">
+    {% for l in similar %} {% include 'partials/listing_card.html' %} {% endfor %}
+  </div>
+</div>
+{% endif %}
+</div>
+
+<!-- AI Chat Button -->
+<button class="ai-chat-btn" onclick="toggleChat()" title="AI Assistant">🤖</button>
+<div class="ai-chat-panel" id="ai-panel">
+  <div class="ai-chat-header">
+    <span style="font-size:1.3rem">🤖</span>
+    <div><div style="font-weight:700">Bazaar AI</div><div style="font-size:0.75rem;opacity:0.8">Ask me about this listing</div></div>
+    <button onclick="toggleChat()" style="background:none;border:none;color:white;cursor:pointer;margin-left:auto;font-size:1.1rem">✕</button>
+  </div>
+  <div class="ai-chat-messages" id="chat-msgs">
+    <div class="ai-msg bot">Hi! I'm Bazaar AI 🤖 Ask me about this listing's price, condition, delivery, safety tips, or payment options!</div>
+  </div>
+  <div class="ai-chat-input">
+    <input type="text" id="ai-input" placeholder="Ask anything..." onkeydown="if(event.key==='Enter')sendAI()">
+    <button onclick="sendAI()"><i class="fas fa-paper-plane"></i></button>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const LISTING_LAT = {{ listing.lat or 'null' }};
+const LISTING_LNG = {{ listing.lng or 'null' }};
+const LISTING_ID = {{ listing.id }};
+
+{% if listing.lat and listing.lng %}
+document.addEventListener('DOMContentLoaded', function(){
+  const detailMap = L.map('detail-map').setView([LISTING_LAT, LISTING_LNG], 14);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    {attribution:'© OpenStreetMap contributors', maxZoom:19}).addTo(detailMap);
+  L.marker([LISTING_LAT, LISTING_LNG]).addTo(detailMap)
+    .bindPopup('<b>{{ listing.title|replace("'","\\'")|safe }}</b><br>₹{{ '{:,.0f}'.format(listing.price) }}').openPopup();
+  // Show distance from user
+  if(navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(pos=>{
+      fetch(`/api/distance?lat1=${pos.coords.latitude}&lng1=${pos.coords.longitude}&lat2=${LISTING_LAT}&lng2=${LISTING_LNG}`)
+        .then(r=>r.json()).then(d=>{
+          const el = document.getElementById('dist-text');
+          if(el && d.delivery_text) el.textContent = d.delivery_text;
+          L.polyline([[pos.coords.latitude, pos.coords.longitude],[LISTING_LAT,LISTING_LNG]],
+            {color:'#e94560', weight:2, dashArray:'6,6'}).addTo(detailMap);
+          L.circleMarker([pos.coords.latitude, pos.coords.longitude],
+            {radius:8, color:'#0fcf6f', fillColor:'#0fcf6f', fillOpacity:0.7}).addTo(detailMap);
+        });
+    });
+  }
+});
+{% endif %}
+
+function switchImage(thumb, src) {
+  document.getElementById('main-img').src = src;
+  document.querySelectorAll('.thumb').forEach(t=>t.classList.remove('active'));
+  thumb.classList.add('active');
+}
+
+function toggleFav(id, btn) {
+  fetch(`/favorite/${id}`, {method:'POST', headers:{'Content-Type':'application/json'}})
+    .then(r=>r.json()).then(d=>{
+      const icon = btn.querySelector('i');
+      if(d.status==='added') { icon.className='fas fa-heart'; icon.style.color='var(--accent)'; }
+      else { icon.className='far fa-heart'; icon.style.color=''; }
+    });
+}
+
+let chatOpen = false;
+function toggleChat() {
+  chatOpen = !chatOpen;
+  document.getElementById('ai-panel').style.display = chatOpen ? 'flex' : 'none';
+}
+
+function sendAI() {
+  const input = document.getElementById('ai-input');
+  const msg = input.value.trim();
+  if(!msg) return;
+  const msgs = document.getElementById('chat-msgs');
+  msgs.innerHTML += `<div class="ai-msg user">${msg}</div>`;
+  input.value = '';
+  msgs.scrollTop = msgs.scrollHeight;
+  fetch('/ai_chat', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({message: msg, listing_id: LISTING_ID})
+  }).then(r=>r.json()).then(d=>{
+    msgs.innerHTML += `<div class="ai-msg bot">${d.reply}</div>`;
+    msgs.scrollTop = msgs.scrollHeight;
+  });
+}
+</script>
+{% endblock %}

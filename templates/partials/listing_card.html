@@ -1,0 +1,19 @@
+<div class="listing-card {% if l.ai_verified %}ai-verified{% elif l.ai_score < 60 %}ai-warning{% endif %}" onclick="window.location='{{ url_for('listing_detail', id=l.id) }}'">
+  {% set imgs = l.get_images() %}
+  {% if imgs %}
+    <img class="card-img" src="{{ url_for('static', filename='uploads/' + imgs[0]) }}" alt="{{ l.title }}" loading="lazy">
+  {% else %}
+    <div class="card-img-placeholder">
+      {{ l.category.icon if l.category else '📦' }}
+    </div>
+  {% endif %}
+  <div class="card-body">
+    <div class="card-title">{{ l.title[:55] }}{% if l.title|length > 55 %}…{% endif %}</div>
+    <div class="card-price">₹{{ '{:,.0f}'.format(l.price) }}</div>
+    <div class="card-meta">
+      {% if l.city %}<span>📍 {{ l.city }}</span>{% endif %}
+      <span>{{ l.condition|title if l.condition }}</span>
+      <span style="margin-left:auto;color:var(--text2)">{{ l.views }} views</span>
+    </div>
+  </div>
+</div>

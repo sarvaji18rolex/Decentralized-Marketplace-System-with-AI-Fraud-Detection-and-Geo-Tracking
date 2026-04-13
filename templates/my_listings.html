@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block title %}My Listings — Bazaar{% endblock %}
+{% block content %}
+<div class="container page-content">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px">
+    <div class="section-title">My Listings</div>
+    <a href="{{ url_for('post_listing') }}" class="btn btn-primary"><i class="fas fa-plus"></i> New Listing</a>
+  </div>
+  {% if listings %}
+  <div style="display:flex;flex-direction:column;gap:14px">
+    {% for l in listings %}
+    <div style="background:var(--card);border:1px solid {% if l.is_active %}var(--border){% else %}rgba(233,69,96,0.3){% endif %};border-radius:14px;padding:16px 20px;display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+      {% set imgs = l.get_images() %}
+      {% if imgs %}
+      <img src="{{ url_for('static', filename='uploads/' + imgs[0]) }}" style="width:72px;height:72px;object-fit:cover;border-radius:10px;flex-shrink:0">
+      {% else %}
+      <div style="width:72px;height:72px;background:var(--bg3);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.8rem;flex-shrink:0">{{ l.category.icon if l.category else '📦' }}</div>
+      {% endif %}
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;margin-bottom:4px">{{ l.title }}</div>
+        <div style="color:var(--accent);font-weight:700;font-family:'Syne',sans-serif">₹{{ '{:,.0f}'.format(l.price) }}</div>
+        <div style="font-size:0.78rem;color:var(--text2);margin-top:4px;display:flex;gap:12px;flex-wrap:wrap">
+          <span>{{ l.views }} views</span>
+          <span>{{ l.messages|length }} messages</span>
+          <span>{{ l.created_at.strftime('%d %b %Y') }}</span>
+          {% if l.ai_verified %}<span style="color:var(--green)">🤖 AI Verified</span>{% endif %}
+          {% if not l.is_active %}<span style="color:var(--accent)">⛔ Inactive</span>{% endif %}
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;flex-shrink:0">
+        <a href="{{ url_for('listing_detail', id=l.id) }}" class="btn btn-secondary btn-sm">View</a>
+        <form action="{{ url_for('delete_listing', id=l.id) }}" method="post" onsubmit="return confirm('Remove this listing?')">
+          <button type="submit" class="btn btn-sm" style="background:rgba(233,69,96,0.15);color:var(--accent);border:1px solid rgba(233,69,96,0.3)">Remove</button>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div style="text-align:center;padding:80px 0;color:var(--text2)">
+    <div style="font-size:3rem;margin-bottom:16px">📦</div>
+    <div style="margin-bottom:20px">You haven't posted any listings yet</div>
+    <a href="{{ url_for('post_listing') }}" class="btn btn-primary">Post Your First Listing</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

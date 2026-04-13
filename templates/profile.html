@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}{{ profile_user.username }} — Bazaar{% endblock %}
+{% block content %}
+<div class="container page-content">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:20px;padding:32px;margin-bottom:28px;display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap">
+    <div style="width:80px;height:80px;background:linear-gradient(135deg,var(--accent),var(--blue));border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;flex-shrink:0">
+      {{ profile_user.username[0].upper() }}
+    </div>
+    <div style="flex:1">
+      <div style="font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;margin-bottom:4px">{{ profile_user.username }}</div>
+      <div style="color:var(--text2);font-size:0.875rem;margin-bottom:10px">
+        {% if profile_user.city %}📍 {{ profile_user.city }} · {% endif %}
+        Member since {{ profile_user.created_at.strftime('%B %Y') }}
+      </div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+        <span style="color:var(--accent2);font-size:1.1rem">
+          {{'★'*profile_user.rating|int}}{{'☆'*(5-profile_user.rating|int)}}
+          <span style="font-size:0.85rem;color:var(--text2)">({{ profile_user.total_ratings }} reviews)</span>
+        </span>
+        <span class="badge badge-blue">{{ listings|length }} listings</span>
+      </div>
+      {% if profile_user.bio %}<p style="color:var(--text2);font-size:0.9rem">{{ profile_user.bio }}</p>{% endif %}
+    </div>
+  </div>
+
+  <div class="section-title" style="margin-bottom:20px">Active Listings</div>
+  {% if listings %}
+  <div class="listings-grid">
+    {% for l in listings %} {% include 'partials/listing_card.html' %} {% endfor %}
+  </div>
+  {% else %}
+  <div style="text-align:center;padding:40px;color:var(--text2)">No active listings</div>
+  {% endif %}
+
+  {% if reviews %}
+  <div class="section-title" style="margin-top:36px;margin-bottom:20px">Reviews</div>
+  {% for r in reviews %}
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+      <strong style="font-size:0.9rem">{{ r.reviewer.username if r.reviewer else 'User' }}</strong>
+      <span style="color:var(--accent2)">{{'★'*r.rating}}{{'☆'*(5-r.rating)}}</span>
+      <span style="font-size:0.75rem;color:var(--text2);margin-left:auto">{{ r.created_at.strftime('%d %b %Y') }}</span>
+    </div>
+    {% if r.comment %}<p style="font-size:0.875rem;color:var(--text2)">{{ r.comment }}</p>{% endif %}
+  </div>
+  {% endfor %}
+  {% endif %}
+</div>
+{% endblock %}
