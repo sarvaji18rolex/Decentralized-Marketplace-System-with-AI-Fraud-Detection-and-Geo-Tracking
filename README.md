@@ -100,3 +100,7 @@ price, condition, delivery, safety, payment, location, negotiation.
 - Login required for posting, messaging, reviews
 - Report system for community moderation
 - AI fraud detection on every listing
+
+  output:
+  <img width="1350" height="721" alt="Screenshot 2026-04-13 220107" src="https://github.com/user-attachments/assets/a3e8fc7d-7186-4fb4-9813-a2ea6244f91d" />
+
