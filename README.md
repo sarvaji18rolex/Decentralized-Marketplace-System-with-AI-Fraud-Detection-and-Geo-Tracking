@@ -94,7 +94,8 @@ price, condition, delivery, safety, payment, location, negotiation.
 - Bank Transfer
 - Any method (seller's choice)
 
-## 🔐 Security
+
+## 🔐 Security 
 - CAPTCHA on all auth forms (custom SVG, no 3rd party)
 - Password hashing (Werkzeug PBKDF2)
 - Login required for posting, messaging, reviews
