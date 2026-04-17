@@ -89,6 +89,7 @@ price, condition, delivery, safety, payment, location, negotiation.
 - Delivery time estimate: 30 km/h average speed
 
 ## 💳 Payment Methods
+
 - Cash on Delivery (COD)
 - UPI (Unified Payment Interface)
 - Bank Transfer
