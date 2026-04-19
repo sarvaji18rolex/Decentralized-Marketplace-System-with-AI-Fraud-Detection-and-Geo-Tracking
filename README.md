@@ -19,7 +19,8 @@ A feature-rich marketplace app built with Python Flask, SQLite, Leaflet maps, an
 | 📱 Responsive | Mobile-first design |
 | 🗄️ SQLite | Zero-config local database |
 
-## 🚀 Setup & Run
+## 🚀 Setup & Run 
+
 
 ```bash
 # 1. Create virtual environment
