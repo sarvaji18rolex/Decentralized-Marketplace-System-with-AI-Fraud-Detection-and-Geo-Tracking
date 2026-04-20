@@ -91,6 +91,7 @@ price, condition, delivery, safety, payment, location, negotiation.
 
 ## 💳 Payment Methods
 
+
 - Cash on Delivery (COD)
 - UPI (Unified Payment Interface)
 - Bank Transfer
