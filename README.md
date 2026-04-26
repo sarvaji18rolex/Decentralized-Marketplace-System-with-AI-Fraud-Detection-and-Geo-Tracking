@@ -4,6 +4,7 @@ A feature-rich marketplace app built with Python Flask, SQLite, Leaflet maps, an
 
 ## ✨ Features
 
+
 | Feature | Details  |
 |---|---|
 | 🤖 AI Verification | Heuristic engine detects fake/suspicious listings with score & flags |
