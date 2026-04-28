@@ -112,3 +112,5 @@ price, condition, delivery, safety, payment, location, negotiation.
 <img width="1342" height="717" alt="Screenshot 2026-04-13 220138" src="https://github.com/user-attachments/assets/ed843ee1-0f7b-4df7-82d5-6c8c447c9b63" />
 
 
+
+
