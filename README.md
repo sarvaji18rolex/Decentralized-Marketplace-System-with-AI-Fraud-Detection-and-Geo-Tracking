@@ -110,6 +110,7 @@ price, condition, delivery, safety, payment, location, negotiation.
   <img width="1350" height="721" alt="Screenshot 2026-04-13 220107" src="https://github.com/user-attachments/assets/a3e8fc7d-7186-4fb4-9813-a2ea6244f91d" />
 <img width="1348" height="719" alt="Screenshot 2026-04-13 220118" src="https://github.com/user-attachments/assets/29880762-5744-4cdc-8f70-7487dee93ba4" />
 <img width="1342" height="717" alt="Screenshot 2026-04-13 220138" src="https://github.com/user-attachments/assets/ed843ee1-0f7b-4df7-82d5-6c8c447c9b63" />
+<img width="1348" height="718" alt="Screenshot 2026-04-13 220158" src="https://github.com/user-attachments/assets/c8cd77d1-e50d-4728-b3cb-aa8465eabe7e" />
 
 
 
